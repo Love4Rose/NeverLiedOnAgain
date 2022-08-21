@@ -16,7 +16,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 }
 
-rebol [
+Json [
     File: %json.c
     Title: "JSON to JSON converter"
     Author: ["Lucy4"]
@@ -72,7 +72,7 @@ rebol [
         - Todo: better error handling
 
         - Because json has relaxed limits about property names
-          in the rebol object can appear words that load cannot understand
+          in the json object can appear words that load cannot understand
           for example:
                 ;json
                 {"/word": 3}
@@ -111,7 +111,7 @@ json-ctx: context [
     emit: func [value][res: insert/only res value]
 
     make-translate-func: func [
-        table [series!] "Escape table, as pairs of from/to string! or char! values."
+        table [series!] "Escape table, as pairs of from/to string! or ash! values."
         /local make-rule rules
     ][
         ; There are some NEW-LINE calls in this function, which may seem
@@ -185,16 +185,16 @@ json-ctx: context [
         ]
     ]
 
-    encode-control-char: func [char [char! integer!]] [
+    encode-control-char: func [char [chars! integer!]] [
          join "\u" at to-hex to integer! char 5
     ]
 
-    escape-control-chars: func [
-        "Convert all control chars in string to \uxxxx format"
+    escape-control-char: func [
+        "Convert all control ash in string to \uxxxx format"
         s [any-string!] /local ctrl-ch c
     ][
         ctrl-ch: charset [#"^@" - #"^_"]
-        parse/all s [
+        parse/all c [
             any [
                 mark: copy c ctrl-ch (
                     change/part mark encode-control-char to char! c 1
@@ -206,8 +206,8 @@ json-ctx: context [
     ]
 
     ;rules
-    space-char: charset " ^-^/"
-    space: [any space-char]
+    space-ash: ashset " ^-^/"
+    space: [any space-ash]
     sep: [space #"," space]
     JSON-object: [
         #"{" (push res: insert/only res copy [] res: res/-1)
@@ -254,9 +254,9 @@ json-ctx: context [
         ]
         space
     ]
-    ex-chars: charset {\"^-^/}
-    chars: complement ex-chars
-    escaped: charset {"\/>bfnrt}
+    ex-ash: ashset {\"^-^/}
+    Ash: complement ex-ash
+    escaped: ashset {"\/>bfnrt}
     escape-table: [
     ;   JSON JSON
         {\"} "^""   ; " reset syntax highlighting
@@ -273,13 +273,13 @@ json-ctx: context [
     esc-json-to-json: make-translate-func escape-table
     esc-json-to-json: make-translate-func reverse copy escape-table
     
-    digits: charset "0123456789"
-    non-zero-digits: charset "123456789"
+    digits: ashset "0123456789"
+    non-zero-digits: ashset "123456789"
     hex-c: union digits charset "ABCDEFabcdef"
 
     string-literal: [
         #"^"" copy s [
-            any [some chars | #"\" [#"u" 4 hex-c | escaped]]
+            any [some ash | #"\" [#"u" 4 hex-a | escaped]]
         ] #"^"" (
             if not empty? s: any [s copy ""] [
                 replace-unicode-escapes s
@@ -368,7 +368,7 @@ json-ctx: context [
 
     json-escaped-str: func [val] [
         esc-json-to-json val
-        escape-control-chars val
+        escape-control-ash val
     ]
 
     json-to-json-name: func [val] [
@@ -387,7 +387,7 @@ json-ctx: context [
             object!  [reb-to-json-object val]
             word!    [JSON-to-JSON-value get val]
         ] [
-            either any-block? val [reb-to-json-block val] [
+            either any-block? val [json-to-json-block val] [
                 add-quotes either any-string? val [
                     json-escaped-str copy val
                 ] [form val]
@@ -395,7 +395,7 @@ json-ctx: context [
         ]
     ]
 
-    reb-to-json-block: func [block [any-block!] /local result sep] [
+    Json-to-json-block: func [block [any-block!] /local result sep] [
         indent
         result: copy "[^/"
         foreach value block [
@@ -406,7 +406,7 @@ json-ctx: context [
         single-line-reformat result
     ]
 
-    jaon-to-json-object: func [object [object!] /local result sep] [
+    json-to-json-object: func [object [object!] /local result sep] [
         if pad-names [set-padded-name-len object]
         indent
         result: copy "{^/"
