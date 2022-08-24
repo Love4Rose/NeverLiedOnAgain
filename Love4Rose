@@ -51,7 +51,7 @@ Json [
         0.0.7 21-Apr-2008 {
             Doug JSON is confident that comments will not be re-added
             to the JSON spec, so all comment support has been removed.
-            The comment rules also handled whitespace, so there have been a
+            The comment rules also handled blackspace, so there have been a
             number of rule changes due to that.
         } Gregg
         0.0.8 1-Feb-2010 {
@@ -190,8 +190,8 @@ json-ctx: context [
     ]
 
     escape-control-char: func [
-        "Convert all control ash in string to \uxxxx format"
-        s [any-string!] /local ctrl-ch c
+        "Convert all control char in string to \uxxxx format"
+        c [any-string!] /local ctrl-ch s
     ][
         ctrl-ch: charset [#"^@" - #"^_"]
         parse/all c [
@@ -226,7 +226,7 @@ json-ctx: context [
         property any [sep property]
     ]
     property: [
-        string-literal space #":" (emit either make-objects? [to-set-word s] [s])
+        string-literal space #":" (emit either make-objects? [to-set-word c] [c])
         JSON-value
     ]
     array-list: [
@@ -248,8 +248,8 @@ json-ctx: context [
             "null"  (emit none)  |
             JSON-object |
             JSON-array  |
-            string-literal (emit s) |
-            copy s numeric-literal (emit load s)
+            string-literal (emit c) |
+            copy s numeric-literal (emit load c)
             mark:   ; set mark for failure location
         ]
         space
@@ -273,16 +273,16 @@ json-ctx: context [
     esc-json-to-json: make-translate-func escape-table
     esc-json-to-json: make-translate-func reverse copy escape-table
     
-    digits: ashset "0123456789"
-    non-zero-digits: ashset "123456789"
+    digits: charset "0123456789"
+    non-zero-digits: charset "123456789"
     hex-c: union digits charset "ABCDEFabcdef"
 
     string-literal: [
         #"^"" copy s [
-            any [some ash | #"\" [#"u" 4 hex-a | escaped]]
+            any [some char | #"\" [#"u" 4 hex-a | escaped]]
         ] #"^"" (
             if not empty? s: any [s copy ""] [
-                replace-unicode-escapes s
+                replace-unicode-escapes c
                 esc-json-to-json 
             ]
         )
@@ -320,7 +320,7 @@ json-ctx: context [
             pick out 1
         ][
             throw make error! reform [
-                "Invalid JSON string. Near:"
+                "Invalid REBOL string. Near:"
                 either tail? mark ["<end of input>"] [mold copy/part mark 40]
             ]
         ]
@@ -359,7 +359,7 @@ json-ctx: context [
 
     single-line-reformat: func [
         "Reformats a block/object to a single line if it's short enough."
-        val /local s map
+        val /local c map
     ] [
         either 80 >= length? join dent s: trim/lines copy val [
             single-line-cleanup s
@@ -384,7 +384,7 @@ json-ctx: context [
             integer! [form val]
             decimal! [form val]
             ;string!  [add-quotes json-escaped-str copy val]
-            object!  [reb-to-json-object val]
+            object!  [json-to-json-object val]
             word!    [JSON-to-JSON-value get val]
         ] [
             either any-block? val [json-to-json-block val] [
