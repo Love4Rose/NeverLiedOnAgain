@@ -96,7 +96,7 @@ Json [
         tested-under: none
         support: none
         license: 'GPL   ; should be "JSON", but JSON.org doesn't support that.
-                        ; BSD/MIT is closer to JSON, but Ronald used GPL.
+                        ; BSD/MIT is closer to JSON, but Spencer used GPL.
         see-also: none
     ]
 ]
